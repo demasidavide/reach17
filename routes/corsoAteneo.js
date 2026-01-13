@@ -76,5 +76,28 @@ router.post("/add", async (req, res) => {
   }
 });
 //------------------------------------------------------------------------
+//DELETE per cancellazione corso-------------------------------------------------
+//controlli: id vuoto - id non convertibile in numero - id non trovato
+router.delete("/delete", async (req, res) => {
+  try {
+    const { corso_id, ateneo_id } = req.body;
+    if (!corso_id || !ateneo_id || isNaN(corso_id) || isNaN(ateneo_id)) {
+      res.status(400).json({ error: "Id non trovato o non valido" });
+      return;
+    }
+    const [result] = await pool.query(
+      `
+      DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
+      [corso_id,ateneo_id]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "Id non trovato" });
+    }
+    res.json({ message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}` });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel database" });
+  }
+});
+//--------------------------------------------------------------------------------
 
 module.exports = router;
