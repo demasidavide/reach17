@@ -14,6 +14,9 @@ app.use('/tipologia',tipologiaRouter);
 //importo da corso.js
 const corsoRouter = require('./routes/corso.js');
 app.use('/corso',corsoRouter);
+//importo da corsoAteneo.js
+const corsoAteneoRouter = require('./routes/corsoAteneo.js');
+app.use('/corsoateneo',corsoAteneoRouter);
 
 
 app.listen(3000, () => console.log("server partito su porta 3000"));
