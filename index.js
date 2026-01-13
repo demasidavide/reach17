@@ -8,6 +8,9 @@ app.use(express.json());
 //importo da ateneo.js
 const ateneoRouter = require('./routes/ateneo.js');
 app.use('/ateneo',ateneoRouter);
+//importo da tipologia.js
+const tipologiaRouter = require('./routes/tipologia.js');
+app.use('/tipologia',tipologiaRouter);
 
 
 
