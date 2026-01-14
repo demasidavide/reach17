@@ -3,8 +3,12 @@ const pool = require("../db");
 const router = express.Router();
 
 //GET per read corso e tipologia associata--------------------------------
+//aggiunto controllo totale righe,pagine,prew e next page
 router.get("/read", async (req, res) => {
   try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
     const [rows] = await pool.query(`
         SELECT 
         corso.id AS id_corso,
@@ -12,8 +16,25 @@ router.get("/read", async (req, res) => {
         tipologia_corso.id AS id_tipologia,
         tipologia_corso.nome AS nome_tipologia
         FROM corso INNER JOIN tipologia_corso 
-        ON corso.tipologia_id=tipologia_corso.id;`);
-    res.json(rows);
+        ON corso.tipologia_id=tipologia_corso.id
+        LIMIT ? OFFSET ?;`,[limit,offset]);
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM corso`);
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      }
+    })
   } catch (error) {
     res.status(500).json({ error: "Errore nel database" });
   }
