@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const logger = require('../logger');
 const router = express.Router();
 
 //GET per leggere tutti gli atenei------------------------------------------------
@@ -19,8 +20,6 @@ router.get("/read", async (req, res) => {
       FROM ateneo`);
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / limit);
-
-    console.log("controllo");
     res.json({
       data: rows,
       pagination: {
@@ -33,6 +32,10 @@ router.get("/read", async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error('Errore GET /ateneo/read', { 
+      error: error.message, 
+      stack: error.stack 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });
@@ -43,6 +46,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) {
+      logger.warn('POST /ateneo/add - Nome non presente', { user: req.user?.username });
       res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
       return;
     }
@@ -55,7 +59,10 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
       message: `Ateneo ${nome} con Id ${result.insertId} creato con successo`,
     });
   } catch (error) {
-    console.error(error);
+    logger.error('Errore POST /ateneo/add', { 
+      error: error.message,
+      username: req.user?.username 
+    });
     res.status(500).json({ error: "Errore database" });
   }
 });
@@ -67,6 +74,7 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
   try {
     const { id } = req.body;
     if (!id || isNaN(id)) {
+      logger.warn('DELETE /ateneo/delete - Id non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id non trovato o non valido" });
       return;
     }
@@ -76,10 +84,14 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
       [id]
     );
     if (result.affectedRows === 0) {
+      logger.warn('DELETE /ateneo/delete - ID non trovato nel DB', { id, user: req.user?.username });
       return res.status(404).json({ error: "Id non trovato" });
     }
     res.json({ message: `Ateneo con Id ${id} eliminato` });
   } catch (error) {
+    logger.error('Errore DELETE /ateneo/delete', { 
+      error: error.message 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });
@@ -90,6 +102,7 @@ router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id, nome } = req.body;
     if (!id || !nome || isNaN(id)) {
+      logger.warn('PUT /ateneo/mod - Id o nome non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id o nome non valido" });
       return;
     }
@@ -98,10 +111,15 @@ router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
       [nome, id]
     );
     if (result.affectedRows === 0) {
+      logger.warn('DELETE /ateneo/mod - ID ateneo non trovato nel DB', { id, user: req.user?.username });
       return res.status(404).json({ error: "Ateneo non trovato" });
     }
     res.json({ message: `Ateneo ${id} aggiornato con nome "${nome}"` });
   } catch (error) {
+    logger.error('Errore PUT /ateneo/mod', { 
+      error: error.message,
+      userId: req.user?.userId 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });

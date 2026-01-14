@@ -1,6 +1,7 @@
 const express = require("express");
 const pool = require("../db");
 const { authMiddleware, requireRole } = require('../middleware/auth');
+const logger = require('../logger');
 const router = express.Router();
 
 //GET per lettura tabella e associazioni
@@ -41,6 +42,10 @@ router.get("/read", async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error('Errore GET /corsoateneo/read', { 
+      error: error.message, 
+      stack: error.stack 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });
@@ -54,6 +59,7 @@ router.get("/search/name", async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
     if (!nome || nome.trim().length < 1) {
+      logger.warn('GET /corsoateneo/search/name - Nome non valido', { user: req.user?.username });
       return res
         .status(400)
         .json({ error: "Il nome deve contenere almeno un carattere" });
@@ -90,6 +96,10 @@ router.get("/search/name", async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error('Errore GET /corsoateneo/search/name', { 
+      error: error.message, 
+      stack: error.stack 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });
@@ -175,6 +185,10 @@ router.get("/search/type", async (req, res) => {
         },
       });
   } catch (error) {
+    logger.error('Errore GET /corsoateneo/search/type', { 
+      error: error.message, 
+      stack: error.stack 
+    });
     console.error(error);
     res.status(500).json({ error: "Errore nel database" });
   }
@@ -188,6 +202,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { idCorso, idAteneo } = req.body;
     if (!idCorso || !idAteneo) {
+      logger.warn('POST /corsoateneo/add - Id ateneo o Id corso non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id Corso o Id Ateneo non valido" });
       return;
     }
@@ -200,6 +215,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
     ]);
     if (readCorso.length === 0) {
       await conn.rollback();
+      logger.warn('POST /corsoateneo/add -transactio- Id corso non trovato', {idCorso, user: req.user?.username });
       return res
         .status(400)
         .json({ error: `Attenzione Id corso ${idCorso} non trovato` });
@@ -210,6 +226,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
     );
     if (readAteneo.length === 0) {
       await conn.rollback();
+      logger.warn('POST /corsoateneo/add -transaction- Id ateneo non trovato', {idAteneo, user: req.user?.username });
       return res
         .status(401)
         .json({ error: `Attenzione Id Ateneo ${idAteneo} non trovato` });
@@ -225,10 +242,16 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
       .status(201)
       .json({ message: `Corso ${idCorso} associato all'Ateneo ${idAteneo}` });
   } catch (error) {
+    logger.error('Errore POST /corsoateneo/add', { 
+      error: error.message,
+      username: req.user?.username 
+    });
     if (conn) {
       try {
         await conn.rollback();
-      } catch (e) {} // aggiungi rollback
+      } catch (error) {
+        logger.error('POST /corsoateneo/add Connessione non riuscita', {user: req.user?.username });
+      } 
     }
     res.status(500).json({ error: "Errore nel database" });
   } finally {
@@ -242,6 +265,7 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
   try {
     const { corso_id, ateneo_id } = req.body;
     if (!corso_id || !ateneo_id || isNaN(corso_id) || isNaN(ateneo_id)) {
+      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id non trovato o non valido" });
       return;
     }
@@ -251,12 +275,16 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
       [corso_id, ateneo_id]
     );
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Id non trovato" });
+      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato', {corso_id, ateneo_id, user: req.user?.username });
+      return res.status(404).json({ error: `ID ${corso_id, ateneo_id} non trovati` });
     }
     res.json({
       message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}`,
     });
   } catch (error) {
+    logger.error('Errore DELETE /corsoateneo/delete', { 
+      error: error.message 
+    });
     res.status(500).json({ error: "Errore nel database" });
   }
 });
