@@ -3,7 +3,8 @@ const express = require("express");
 const app = express();
 require('dotenv').config();
 app.use(express.json());
-
+const authRouter = require('./routes/auth');
+app.use('/auth', authRouter);
 
 //importo da ateneo.js
 const ateneoRouter = require('./routes/ateneo.js');
