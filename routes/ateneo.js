@@ -4,9 +4,29 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const logger = require('../logger');
 const router = express.Router();
 
+//GET per leggere ateneo singolo da id--------------------------------------------
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if(!id || isNaN(id)){
+      logger.warn('GET /ateneo/:id - Id non valido', { user: req.user?.username });
+      res.status(400).json({ error: "Id vuoto o non valido" });
+      return;
+    }
+    const [row] = await pool.query(`SELECT * FROM ateneo WHERE id = ?`, [id]);
+    res.json(row);
+  } catch (error) {
+    logger.error('Errore GET /ateneo/read', { 
+      error: error.message, 
+      stack: error.stack 
+    });
+    res.status(500).json({ error: "Errore nel database" });
+  }
+});
+//--------------------------------------------------------------------------------
 //GET per leggere tutti gli atenei------------------------------------------------
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/read", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -41,15 +61,20 @@ router.get("/read", async (req, res) => {
 });
 //--------------------------------------------------------------------------------
 //POST per creare un ateneo-------------------------------------------------------
-//controlli:campo 'nome' vuoto-
-router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
+//controlli:campo 'nome' vuoto- nome gia presente
+router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) {
-      logger.warn('POST /ateneo/add - Nome non presente', { user: req.user?.username });
-      res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
-      return;
+      logger.warn('POST /ateneo/add - Nome non valido', { user: req.user?.username });
+      return res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
     }
+    const [readName] = await conn.query(
+        "SELECT nome FROM ateneo WHERE nome = ? ",[nome]);
+        if(readName.length > 0){
+          logger.warn(`POST /ateneo/add - Nome gia presente`, {nome, user: req.user?.username });
+            return res.status(409).json({error: `Attenzione nome ${nome} già presente`})
+        }
     const [result] = await pool.query(
       `
         INSERT INTO ateneo (nome) VALUES (?)`,
@@ -70,9 +95,9 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
 //DELETE per cancellazione ateneo-------------------------------------------------
 //passato con json e req.body
 //controlli: id vuoto - id non convertibile in nuymero - id non trovato
-router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
+router.delete("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     if (!id || isNaN(id)) {
       logger.warn('DELETE /ateneo/delete - Id non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id non trovato o non valido" });
@@ -98,9 +123,10 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
 //--------------------------------------------------------------------------------
 //PUT per modifica nome ateneo----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
+router.put("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const { id, nome } = req.body;
+    const { id } = req.params;
+    const { nome } = req.body;
     if (!id || !nome || isNaN(id)) {
       logger.warn('PUT /ateneo/mod - Id o nome non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id o nome non valido" });

@@ -6,7 +6,7 @@ const router = express.Router();
 
 //GET per lettura tabella e associazioni
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/read", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -80,7 +80,9 @@ router.get("/search/name", async (req, res) => {
     );
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total 
-      FROM corso_ateneo`);
+      FROM corso_ateneo
+      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+      WHERE LOWER(corso.nome) LIKE LOWER(?)`, [`%${nome}%`]);
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / limit);
 
@@ -169,7 +171,10 @@ router.get("/search/type", async (req, res) => {
     );
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total 
-      FROM corso_ateneo`);
+      FROM corso_ateneo
+      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+      INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`, [`%${tipo}%`]);
       const total = countResult[0].total;
       const totalPages = Math.ceil(total / limit);
 
@@ -197,7 +202,7 @@ router.get("/search/type", async (req, res) => {
 //POST transazione per associazione corso-ateneo-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente -
 
-router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
+router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
   let conn;
   try {
     const { idCorso, idAteneo } = req.body;
@@ -228,7 +233,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
       await conn.rollback();
       logger.warn('POST /corsoateneo/add -transaction- Id ateneo non trovato', {idAteneo, user: req.user?.username });
       return res
-        .status(401)
+        .status(404)
         .json({ error: `Attenzione Id Ateneo ${idAteneo} non trovato` });
     }
 
@@ -249,9 +254,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
     if (conn) {
       try {
         await conn.rollback();
-      } catch (error) {
-        logger.error('POST /corsoateneo/add Connessione non riuscita', {user: req.user?.username });
-      } 
+      } catch (e) {}
     }
     res.status(500).json({ error: "Errore nel database" });
   } finally {
@@ -261,7 +264,7 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
+router.delete("/", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { corso_id, ateneo_id } = req.body;
     if (!corso_id || !ateneo_id || isNaN(corso_id) || isNaN(ateneo_id)) {
@@ -276,7 +279,7 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
     );
     if (result.affectedRows === 0) {
       logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato', {corso_id, ateneo_id, user: req.user?.username });
-      return res.status(404).json({ error: `ID ${corso_id, ateneo_id} non trovati` });
+      return res.status(404).json({ error: `Id ${corso_id}${ateneo_id} non trovati` });
     }
     res.json({
       message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}`,

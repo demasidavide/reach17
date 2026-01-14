@@ -8,13 +8,13 @@ app.use('/auth', authRouter);
 
 //importo da ateneo.js
 const ateneoRouter = require('./routes/ateneo.js');
-app.use('/ateneo',ateneoRouter);
+app.use('/atenei',ateneoRouter);
 //importo da tipologia.js
 const tipologiaRouter = require('./routes/tipologia.js');
-app.use('/tipologia',tipologiaRouter);
+app.use('/tipologie',tipologiaRouter);
 //importo da corso.js
 const corsoRouter = require('./routes/corso.js');
-app.use('/corso',corsoRouter);
+app.use('/corsi',corsoRouter);
 //importo da corsoAteneo.js
 const corsoAteneoRouter = require('./routes/corsoAteneo.js');
 app.use('/corsoateneo',corsoAteneoRouter);

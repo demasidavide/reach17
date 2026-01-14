@@ -4,9 +4,30 @@ const { authMiddleware, requireRole } = require('../middleware/auth');
 const logger = require('../logger');
 const router = express.Router();
 
+//GET per per leggere una tipologia in base a un id----------------------------
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if(!id || isNaN(id)){
+      logger.warn('GET /tipologie/:id - Id non valido', { user: req.user?.username });
+      res.status(400).json({ error: "Id vuoto o non valido" });
+      return;
+    }
+    const [row] = await pool.query(`SELECT * FROM tipologia_corso WHERE id = ?`, [id]);
+    res.json(row);
+  } catch (error) {
+    logger.error('Errore GET /tipologie/:id', { 
+      error: error.message, 
+      stack: error.stack 
+    });
+    res.status(500).json({ error: "Errore nel database" });
+  }
+});
+//------------------------------------------------------------------------
+
 //GET per leggere tutte le tipologie------------------------------------------------
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/read", async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
@@ -44,7 +65,7 @@ router.get("/read", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare una tipologia---------------------------------------------------
 //controlli:campo 'nome' vuoto-
-router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
+router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) {
@@ -52,6 +73,13 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
       res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
       return;
     }
+    const [readName] = await conn.query(
+        "SELECT nome FROM tipologia_corso WHERE nome = ? ",[nome]);
+        if(readName.length > 0){
+          logger.warn(`POST /tipologia_corso/add - Nome gia presente`, {nome, user: req.user?.username });
+            return res.status(409).json({error: `Attenzione nome ${nome} già presente`});
+        }
+
     const [result] = await pool.query(
       `
         INSERT INTO tipologia_corso (nome) VALUES (?)`,
@@ -72,9 +100,9 @@ router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
 //DELETE per cancellazione tipologia-------------------------------------------------
 //passato con json e req.body
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
+router.delete("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const { id } = req.body;
+    const { id } = req.params;
     if (!id || isNaN(id)) {
       logger.warn('DELETE /tipologia/delete - Id non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id non trovato o non valido" });
@@ -100,9 +128,10 @@ router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) 
 //--------------------------------------------------------------------------------
 //PUT per modifica nome tipologia----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
+router.put("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const { id, nome } = req.body;
+    const { nome } = req.body;
+    const { id } = req.params;
     if (!id || !nome || isNaN(id)) {
       logger.warn('PUT /tipologia/mod - Id o Nome non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id o nome non valido" });
