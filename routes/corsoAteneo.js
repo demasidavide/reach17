@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../db");
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 //GET per lettura tabella e associazioni
@@ -182,7 +183,7 @@ router.get("/search/type", async (req, res) => {
 //POST transazione per associazione corso-ateneo-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente -
 
-router.post("/add", async (req, res) => {
+router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
   let conn;
   try {
     const { idCorso, idAteneo } = req.body;
@@ -237,7 +238,7 @@ router.post("/add", async (req, res) => {
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { corso_id, ateneo_id } = req.body;
     if (!corso_id || !ateneo_id || isNaN(corso_id) || isNaN(ateneo_id)) {

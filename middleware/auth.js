@@ -23,4 +23,14 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+const requireRole = (role) => (req, res, next) => {
+  if (req.user.role !== role) {
+    return res.status(403).json({ 
+      error: `Accesso negato: ruolo richiesto "${role}", hai "${req.user.role}"` 
+    });
+  }
+  next();
+};
+
+module.exports = { authMiddleware, requireRole };
+

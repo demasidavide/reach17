@@ -1,6 +1,6 @@
 const express = require("express");
 const pool = require("../db");
-const authMiddleware = require('../middleware/auth');
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 //GET per leggere tutti gli atenei------------------------------------------------
@@ -39,7 +39,7 @@ router.get("/read", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare un ateneo-------------------------------------------------------
 //controlli:campo 'nome' vuoto-
-router.post("/add", authMiddleware, async (req, res) => {
+router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) {
@@ -63,7 +63,7 @@ router.post("/add", authMiddleware, async (req, res) => {
 //DELETE per cancellazione ateneo-------------------------------------------------
 //passato con json e req.body
 //controlli: id vuoto - id non convertibile in nuymero - id non trovato
-router.delete("/delete", authMiddleware, async (req, res) => {
+router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.body;
     if (!id || isNaN(id)) {
@@ -86,7 +86,7 @@ router.delete("/delete", authMiddleware, async (req, res) => {
 //--------------------------------------------------------------------------------
 //PUT per modifica nome ateneo----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/mod", authMiddleware, async (req, res) => {
+router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id, nome } = req.body;
     if (!id || !nome || isNaN(id)) {

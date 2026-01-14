@@ -1,5 +1,6 @@
 const express = require("express");
 const pool = require("../db");
+const { authMiddleware, requireRole } = require('../middleware/auth');
 const router = express.Router();
 
 //GET per leggere tutte le tipologie------------------------------------------------
@@ -38,7 +39,7 @@ router.get("/read", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare una tipologia---------------------------------------------------
 //controlli:campo 'nome' vuoto-
-router.post("/add", async (req, res) => {
+router.post("/add", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { nome } = req.body;
     if (!nome) {
@@ -62,7 +63,7 @@ router.post("/add", async (req, res) => {
 //DELETE per cancellazione tipologia-------------------------------------------------
 //passato con json e req.body
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/delete", async (req, res) => {
+router.delete("/delete", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id } = req.body;
     if (!id || isNaN(id)) {
@@ -85,7 +86,7 @@ router.delete("/delete", async (req, res) => {
 //--------------------------------------------------------------------------------
 //PUT per modifica nome tipologia----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/mod", async (req, res) => {
+router.put("/mod", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { id, nome } = req.body;
     if (!id || !nome || isNaN(id)) {
