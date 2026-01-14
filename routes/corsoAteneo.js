@@ -3,28 +3,62 @@ const pool = require("../db");
 const router = express.Router();
 
 //GET per lettura tabella e associazioni
+//aggiunto controllo totale righe,pagine,prew e next page
 router.get("/read", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const [rows] = await pool.query(
+      `
        SELECT 
     corso.id AS id_corso,
     corso.nome AS nome_corso,
     ateneo.id AS id_ateneo,
     ateneo.nome AS nome_ateneo
-FROM corso_ateneo
-INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id;`);
-    res.json(rows);
+    FROM corso_ateneo
+    INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+    INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+    LIMIT ? OFFSET ?;`,
+      [limit, offset]
+    );
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM corso_ateneo`);
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: "Errore nel database" });
   }
 });
 //------------------------------------------------------------------------
 //GET filtro per nome corso-----------------------------------------------
+//aggiunto controllo totale righe,pagine,prew e next page
 router.get("/search/name", async (req, res) => {
   try {
-    const { nome } = req.body;
-    const [rows] = await pool.query(`
+    const { nome } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    if (!nome || nome.trim().length < 1) {
+      return res
+        .status(400)
+        .json({ error: "Il nome deve contenere almeno un carattere" });
+    }
+    const [rows] = await pool.query(
+      `
       SELECT 
         corso.id AS id_corso,
         corso.nome AS nome_corso,
@@ -33,20 +67,44 @@ router.get("/search/name", async (req, res) => {
       FROM corso_ateneo
       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
       INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-      WHERE LOWER(corso.nome) LIKE LOWER(?)`, [`%${nome}%`]);
-    res.json(rows);
+      WHERE LOWER(corso.nome) LIKE LOWER(?)
+      LIMIT ? OFFSET ?`,
+      [`%${nome}%`, limit, offset]
+    );
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM corso_ateneo`);
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: "Errore nel database" });
   }
 });
 //------------------------------------------------------------------------
 //GET filtro per tipologia corso-----------------------------------------------
+//aggiunto controllo totale righe,pagine,prew e next page
 router.get("/search/type", async (req, res) => {
   try {
-    const { tipo } = req.query;  
-    
+    const { tipo } = req.query;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
     if (!tipo || tipo.trim().length === 0) {
-      const [rows] = await pool.query(`
+      const [rows] = await pool.query(
+        `
         SELECT 
           corso.id AS id_corso,
           corso.nome AS nome_corso,
@@ -57,11 +115,32 @@ router.get("/search/type", async (req, res) => {
         FROM corso_ateneo
         INNER JOIN corso ON corso_ateneo.corso_id = corso.id
         INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-        INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id;`);
-      return res.json(rows);  
+        INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+        LIMIT ? OFFSET ?;`,
+        [limit, offset]
+      );
+      const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM corso_ateneo`);
+      const total = countResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      res.json({
+        data: rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      });
+      return;
     }
-    
-    const [rows] = await pool.query(`
+
+    const [rows] = await pool.query(
+      `
       SELECT 
         corso.id AS id_corso,
         corso.nome AS nome_corso,
@@ -73,8 +152,27 @@ router.get("/search/type", async (req, res) => {
       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
       INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
       INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
-      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`, [`%${tipo}%`]);
-    res.json(rows);
+      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)
+      LIMIT ? OFFSET ?`,
+      [`%${tipo}%`,limit,offset]
+    );
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM corso_ateneo`);
+      const total = countResult[0].total;
+      const totalPages = Math.ceil(total / limit);
+
+      res.json({
+        data: rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages,
+          hasNextPage: page < totalPages,
+          hasPrevPage: page > 1,
+        },
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Errore nel database" });
@@ -149,12 +247,14 @@ router.delete("/delete", async (req, res) => {
     const [result] = await pool.query(
       `
       DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
-      [corso_id,ateneo_id]
+      [corso_id, ateneo_id]
     );
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: "Id non trovato" });
     }
-    res.json({ message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}` });
+    res.json({
+      message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}`,
+    });
   } catch (error) {
     res.status(500).json({ error: "Errore nel database" });
   }
