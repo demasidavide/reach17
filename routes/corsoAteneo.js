@@ -20,6 +20,67 @@ INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id;`);
   }
 });
 //------------------------------------------------------------------------
+//GET filtro per nome corso-----------------------------------------------
+router.get("/search/name", async (req, res) => {
+  try {
+    const { nome } = req.body;
+    const [rows] = await pool.query(`
+      SELECT 
+        corso.id AS id_corso,
+        corso.nome AS nome_corso,
+        ateneo.id AS id_ateneo,
+        ateneo.nome AS nome_ateneo
+      FROM corso_ateneo
+      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+      INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+      WHERE LOWER(corso.nome) LIKE LOWER(?)`, [`%${nome}%`]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel database" });
+  }
+});
+//------------------------------------------------------------------------
+//GET filtro per tipologia corso-----------------------------------------------
+router.get("/search/type", async (req, res) => {
+  try {
+    const { tipo } = req.query;  
+    
+    if (!tipo || tipo.trim().length === 0) {
+      const [rows] = await pool.query(`
+        SELECT 
+          corso.id AS id_corso,
+          corso.nome AS nome_corso,
+          tipologia_corso.id AS id_tipologia,
+          tipologia_corso.nome AS nome_tipologia,
+          ateneo.id AS id_ateneo,
+          ateneo.nome AS nome_ateneo
+        FROM corso_ateneo
+        INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+        INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+        INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id;`);
+      return res.json(rows);  
+    }
+    
+    const [rows] = await pool.query(`
+      SELECT 
+        corso.id AS id_corso,
+        corso.nome AS nome_corso,
+        tipologia_corso.id AS id_tipologia,
+        tipologia_corso.nome AS nome_tipologia,
+        ateneo.id AS id_ateneo,
+        ateneo.nome AS nome_ateneo
+      FROM corso_ateneo
+      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+      INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+      INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`, [`%${tipo}%`]);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Errore nel database" });
+  }
+});
+//------------------------------------------------------------------------
 //POST transazione per associazione corso-ateneo-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente -
 
