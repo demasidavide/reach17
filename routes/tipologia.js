@@ -3,11 +3,34 @@ const pool = require("../db");
 const router = express.Router();
 
 //GET per leggere tutte le tipologie------------------------------------------------
+//aggiunto controllo totale righe,pagine,prew e next page
 router.get("/read", async (req, res) => {
   try {
-    const [rows] = await pool.query(`
-        SELECT * FROM tipologia_corso;`);
-    res.json(rows);
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    const [rows] = await pool.query(
+      `
+        SELECT * FROM tipologia_corso LIMIT ? OFFSET ?;`,
+      [limit, offset]
+    );
+    const [countResult] = await pool.query(`
+      SELECT COUNT(*) as total 
+      FROM tipologia_corso`);
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
     res.status(500).json({ error: "Errore nel database" });
   }
@@ -74,11 +97,11 @@ router.put("/mod", async (req, res) => {
       [nome, id]
     );
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Tipologia non trovata' });
+      return res.status(404).json({ error: "Tipologia non trovata" });
     }
     res.json({ message: `Tipologia ${id} aggiornata con nome "${nome}"` });
   } catch (error) {
-    res.status(500).json({ error: 'Errore nel database' });
+    res.status(500).json({ error: "Errore nel database" });
   }
 });
 module.exports = router;
