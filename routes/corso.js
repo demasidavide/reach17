@@ -78,9 +78,7 @@ router.post("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
     if (!nome || typeof nome !== 'string' || !tipologiaId) {
       logger.warn('POST /corso/add - Nome  o id non presente', { user: req.user?.username });
       return res.status(400).json({ error: "Id o nome non valido" });
-      
     }
-    
     conn = await pool.getConnection();
     await conn.beginTransaction();
     //controllo se id tipologia esiste
@@ -95,12 +93,6 @@ router.post("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
         .status(400)
         .json({ error: `Attenzione Id tipologia ${tipologiaId} non trovato` });
     }
-    const [readName] = await conn.query(
-        "SELECT nome FROM corso WHERE nome = ? ",[nome]);
-        if(readName.length > 0){
-          logger.warn(`POST /corso/add - Nome gia presente`, {nome, user: req.user?.username });
-            return res.status(409).json({error: `Attenzione nome ${nome} già presente`})
-        }
 
     const [result] = await conn.query(
       "INSERT INTO corso (nome, tipologia_id) VALUES (?, ?)",
@@ -113,6 +105,12 @@ router.post("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
     if (conn) {
       try { await conn.rollback(); } catch(e) {}
     }
+    if (error.code === 'ER_DUP_ENTRY') {
+    logger.warn('POST /corso - Duplicato rilevato da DB', { nome, tipologiaId });
+    return res.status(409).json({ 
+      error: `Corso "${nome}" con tipologia ${tipologiaId} già esistente` 
+    });
+  }
     logger.error('Errore POST /corso/add', { 
       error: error.message,
       username: req.user?.username 
