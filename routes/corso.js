@@ -69,11 +69,10 @@ router.get("/", async (req, res) => {
 //POST transazione per aggiunta corso-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente - 
 // lettura se nome corso gia presente
-router.post("/:id", authMiddleware, requireRole('admin'), async (req, res) => {
+router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
   let conn;
   try {
-    const { nome } = req.body;
-    const{ id } = req.params;
+    const { nome, id } = req.body;
     const tipologiaId = Number(id);
     if (!nome || typeof nome !== 'string' || !tipologiaId) {
       logger.warn('POST /corso/add - Nome  o id non presente', { user: req.user?.username });

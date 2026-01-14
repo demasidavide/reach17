@@ -264,10 +264,11 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/", authMiddleware, requireRole('admin'), async (req, res) => {
+//passo valori nel body perche obbligatori
+router.delete("/:corsoId/:ateneoId", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
-    const { corso_id, ateneo_id } = req.body;
-    if (!corso_id || !ateneo_id || isNaN(corso_id) || isNaN(ateneo_id)) {
+    const { corsoId, ateneoId } = req.params;
+    if (!corsoId || !ateneoId || isNaN(corsoId) || isNaN(ateneoId)) {
       logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non valido', { user: req.user?.username });
       res.status(400).json({ error: "Id non trovato o non valido" });
       return;
@@ -275,14 +276,14 @@ router.delete("/", authMiddleware, requireRole('admin'), async (req, res) => {
     const [result] = await pool.query(
       `
       DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
-      [corso_id, ateneo_id]
+      [corsoId, ateneoId]
     );
     if (result.affectedRows === 0) {
-      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato', {corso_id, ateneo_id, user: req.user?.username });
-      return res.status(404).json({ error: `Id ${corso_id}${ateneo_id} non trovati` });
+      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato', {corsoId, ateneoId, user: req.user?.username });
+      return res.status(404).json({ error: `Id ${corsoId}${ateneoId} non trovati` });
     }
     res.json({
-      message: `Corso con Id ${corso_id} eliminato da Ateneo con id ${ateneo_id}`,
+      message: `Corso con Id ${corsoId} eliminato da Ateneo con id ${ateneoId}`,
     });
   } catch (error) {
     logger.error('Errore DELETE /corsoateneo/delete', { 
