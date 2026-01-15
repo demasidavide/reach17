@@ -14,6 +14,10 @@ router.get("/:id", async (req, res) => {
       return;
     }
     const [row] = await pool.query(`SELECT * FROM corso WHERE id = ?`, [id]);
+    if (row.length === 0) {
+  logger.warn('GET /corsi/:id - Corso non trovato', { id, user: req.user?.username });
+  return res.status(404).json({ error: "Corso non trovato" });
+    }
     res.json(row);
   } catch (error) {
     logger.error('Errore GET /corso/:id', { 
@@ -89,7 +93,7 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
       await conn.rollback();
       logger.warn('POST /corso/add -transaction- Id tipologia non trovato', { user: req.user?.username });
       return res
-        .status(400)
+        .status(404)
         .json({ error: `Attenzione Id tipologia ${tipologiaId} non trovato` });
     }
 

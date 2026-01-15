@@ -14,7 +14,11 @@ router.get("/:id", async (req, res) => {
       return;
     }
     const [row] = await pool.query(`SELECT * FROM tipologia_corso WHERE id = ?`, [id]);
-    res.json(row);
+    if (row.length === 0) {
+  logger.warn('GET /tipologie/:id - Tipologia non trovata', { id, user: req.user?.username });
+  return res.status(404).json({ error: "Tipologia non trovata" });
+    }
+  res.json(row);
   } catch (error) {
     logger.error('Errore GET /tipologie/:id', { 
       error: error.message, 

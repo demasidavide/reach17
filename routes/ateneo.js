@@ -14,6 +14,10 @@ router.get("/:id", async (req, res) => {
       return;
     }
     const [row] = await pool.query(`SELECT * FROM ateneo WHERE id = ?`, [id]);
+    if (row.length === 0) {
+  logger.warn('GET /atenei/:id - Ateneo non trovato', { id, user: req.user?.username });
+  return res.status(404).json({ error: "Ateneo non trovato" });
+    }
     res.json(row);
   } catch (error) {
     logger.error('Errore GET /ateneo/read', { 

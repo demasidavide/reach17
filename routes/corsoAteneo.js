@@ -222,7 +222,7 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
       await conn.rollback();
       logger.warn('POST /corsoateneo/add -transactio- Id corso non trovato', {idCorso, user: req.user?.username });
       return res
-        .status(400)
+        .status(404)
         .json({ error: `Attenzione Id corso ${idCorso} non trovato` });
     }
     const [readAteneo] = await conn.query(
@@ -264,7 +264,6 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-//passo valori nel body perche obbligatori
 router.delete("/:corsoId/:ateneoId", authMiddleware, requireRole('admin'), async (req, res) => {
   try {
     const { corsoId, ateneoId } = req.params;
