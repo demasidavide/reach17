@@ -268,13 +268,15 @@ Questo progetto è stato sviluppato a scopo didattico.
 
 ## 👤 Autore
 
-**[Davide De Masi]**
-- GitHub: [@tuousername](https://github.com/tuousername)
-- LinkedIn: [Il Tuo Profilo](https://linkedin.com/in/tuoprofilo)
-
+**Davide De Masi**
+<div align="left">
+  <a href="https://www.instagram.com/demo46/" target="_blank"><img src="https://img.shields.io/static/v1?message=Instagram&logo=instagram&label=&color=E4405F&logoColor=white&labelColor=&style=for-the-badge" height="35" alt="instagram logo"  /></a>
+  <a href="https://www.linkedin.com/feed/?trk=sem-ga_campid.20677489327_asid.153452322614_crid.677545198980_kw.linkedin_d.c_tid.kwd-148086543_n.g_mt.e_geo.9053436" target="_blank"><img src="https://img.shields.io/static/v1?message=LinkedIn&logo=linkedin&label=&color=0077B5&logoColor=white&labelColor=&style=for-the-badge" height="35" alt="linkedin logo" /></a>
+  <a href="https://www.facebook.com/davide.demasi.7" target="_blank"><img src="https://img.shields.io/static/v1?message=Facebook&logo=facebook&label=&color=1877F2&logoColor=white&labelColor=&style=for-the-badge" height="35" alt="facebook logo"  /></a>
+</div>
 ## 🙏 Note
 
-Progetto realizzato come esercitazione per il corso di Full Stack Web Development.
+Progetto realizzato come esercitazione a scopo didattico.
 
 ---
 
