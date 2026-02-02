@@ -105,7 +105,7 @@ npm start
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"user": "admin", "password": "admin123"}'
+  -d '{"username": "admin", "password": "admin123"}'
 ```
 
 Il server sarà disponibile su `http://localhost:3000`
@@ -259,7 +259,7 @@ project-root/
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"user": "admin", "password": "admin123"}'
+  -d '{"username": "admin", "password": "admin123"}'
 ```
 
 

@@ -5,3 +5,4 @@
 {"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:21","user":"admin"}
 {"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:29","user":"admin"}
 {"id":"27","level":"warn","message":"GET /ateneo/:id - Ateneo non trovato","service":"reach17-api","timestamp":"2026-02-02 09:58:48"}
+{"error":"Duplicate entry '12-23' for key 'PRIMARY'","level":"error","message":"Errore POST /corsoateneo/add","service":"reach17-api","timestamp":"2026-02-02 10:17:42","username":"admin"}
