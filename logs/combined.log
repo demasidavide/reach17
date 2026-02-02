@@ -1,0 +1,7 @@
+{"level":"warn","message":"POST /ateneo/add - Nome gia presente","nome":"Politecnico di Milano","service":"reach17-api","timestamp":"2026-02-02 09:55:45","user":"admin"}
+{"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:56:14","user":"admin"}
+{"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:56:36","user":"admin"}
+{"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:15","user":"admin"}
+{"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:21","user":"admin"}
+{"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:29","user":"admin"}
+{"id":"27","level":"warn","message":"GET /ateneo/:id - Ateneo non trovato","service":"reach17-api","timestamp":"2026-02-02 09:58:48"}

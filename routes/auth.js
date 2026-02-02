@@ -3,19 +3,18 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 
-// Utenti simulati (in produzione leggere dal DB)
 // Password salvata con hash per sicurezza
 const users = [
   { 
     id: 1, 
     username: 'admin', 
-    password: bcrypt.hashSync('admin123', 10),  // password: admin123
+    password: bcrypt.hashSync('admin123', 10),  
     role: 'admin' 
   },
   { 
     id: 2, 
     username: 'user', 
-    password: bcrypt.hashSync('user123', 10),  // password: user123
+    password: bcrypt.hashSync('user123', 10), 
     role: 'user' 
   }
 ];

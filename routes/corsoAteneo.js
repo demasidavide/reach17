@@ -1,7 +1,7 @@
 const express = require("express");
 const pool = require("../db");
-const { authMiddleware, requireRole } = require('../middleware/auth');
-const logger = require('../logger');
+const { authMiddleware, requireRole } = require("../middleware/auth");
+const logger = require("../logger");
 const router = express.Router();
 
 //GET per lettura tabella e associazioni
@@ -22,7 +22,7 @@ router.get("/", async (req, res) => {
     INNER JOIN corso ON corso_ateneo.corso_id = corso.id
     INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
     LIMIT ? OFFSET ?;`,
-      [limit, offset]
+      [limit, offset],
     );
     const [countResult] = await pool.query(`
       SELECT COUNT(*) as total 
@@ -42,9 +42,9 @@ router.get("/", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Errore GET /corsoateneo/read', { 
-      error: error.message, 
-      stack: error.stack 
+    logger.error("Errore GET /corsoateneo/read", {
+      error: error.message,
+      stack: error.stack,
     });
     res.status(500).json({ error: "Errore nel database" });
   }
@@ -59,7 +59,9 @@ router.get("/search/name", async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
     if (!nome || nome.trim().length < 1) {
-      logger.warn('GET /corsoateneo/search/name - Nome non valido', { user: req.user?.username });
+      logger.warn("GET /corsoateneo/search/name - Nome non valido", {
+        user: req.user?.username,
+      });
       return res
         .status(400)
         .json({ error: "Il nome deve contenere almeno un carattere" });
@@ -76,13 +78,16 @@ router.get("/search/name", async (req, res) => {
       INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
       WHERE LOWER(corso.nome) LIKE LOWER(?)
       LIMIT ? OFFSET ?`,
-      [`%${nome}%`, limit, offset]
+      [`%${nome}%`, limit, offset],
     );
-    const [countResult] = await pool.query(`
+    const [countResult] = await pool.query(
+      `
       SELECT COUNT(*) as total 
       FROM corso_ateneo
       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-      WHERE LOWER(corso.nome) LIKE LOWER(?)`, [`%${nome}%`]);
+      WHERE LOWER(corso.nome) LIKE LOWER(?)`,
+      [`%${nome}%`],
+    );
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / limit);
 
@@ -98,9 +103,9 @@ router.get("/search/name", async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Errore GET /corsoateneo/search/name', { 
-      error: error.message, 
-      stack: error.stack 
+    logger.error("Errore GET /corsoateneo/search/name", {
+      error: error.message,
+      stack: error.stack,
     });
     res.status(500).json({ error: "Errore nel database" });
   }
@@ -130,7 +135,7 @@ router.get("/search/type", async (req, res) => {
         INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
         INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
         LIMIT ? OFFSET ?;`,
-        [limit, offset]
+        [limit, offset],
       );
       const [countResult] = await pool.query(`
       SELECT COUNT(*) as total 
@@ -167,32 +172,35 @@ router.get("/search/type", async (req, res) => {
       INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
       WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)
       LIMIT ? OFFSET ?`,
-      [`%${tipo}%`,limit,offset]
+      [`%${tipo}%`, limit, offset],
     );
-    const [countResult] = await pool.query(`
+    const [countResult] = await pool.query(
+      `
       SELECT COUNT(*) as total 
       FROM corso_ateneo
       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
       INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
-      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`, [`%${tipo}%`]);
-      const total = countResult[0].total;
-      const totalPages = Math.ceil(total / limit);
+      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`,
+      [`%${tipo}%`],
+    );
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
 
-      res.json({
-        data: rows,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-        },
-      });
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
-    logger.error('Errore GET /corsoateneo/search/type', { 
-      error: error.message, 
-      stack: error.stack 
+    logger.error("Errore GET /corsoateneo/search/type", {
+      error: error.message,
+      stack: error.stack,
     });
     console.error(error);
     res.status(500).json({ error: "Errore nel database" });
@@ -202,12 +210,14 @@ router.get("/search/type", async (req, res) => {
 //POST transazione per associazione corso-ateneo-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente -
 
-router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
+router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
   let conn;
   try {
     const { idCorso, idAteneo } = req.body;
     if (!idCorso || !idAteneo) {
-      logger.warn('POST /corsoateneo/add - Id ateneo o Id corso non valido', { user: req.user?.username });
+      logger.warn("POST /corsoateneo/add - Id ateneo o Id corso non valido", {
+        user: req.user?.username,
+      });
       res.status(400).json({ error: "Id Corso o Id Ateneo non valido" });
       return;
     }
@@ -220,18 +230,24 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
     ]);
     if (readCorso.length === 0) {
       await conn.rollback();
-      logger.warn('POST /corsoateneo/add -transactio- Id corso non trovato', {idCorso, user: req.user?.username });
+      logger.warn("POST /corsoateneo/add -transactio- Id corso non trovato", {
+        idCorso,
+        user: req.user?.username,
+      });
       return res
         .status(404)
         .json({ error: `Attenzione Id corso ${idCorso} non trovato` });
     }
     const [readAteneo] = await conn.query(
       "SELECT id FROM ateneo WHERE id = ? ",
-      [idAteneo]
+      [idAteneo],
     );
     if (readAteneo.length === 0) {
       await conn.rollback();
-      logger.warn('POST /corsoateneo/add -transaction- Id ateneo non trovato', {idAteneo, user: req.user?.username });
+      logger.warn("POST /corsoateneo/add -transaction- Id ateneo non trovato", {
+        idAteneo,
+        user: req.user?.username,
+      });
       return res
         .status(404)
         .json({ error: `Attenzione Id Ateneo ${idAteneo} non trovato` });
@@ -239,17 +255,19 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
 
     const [result] = await conn.query(
       "INSERT INTO corso_ateneo (corso_id, ateneo_id) VALUES (?, ?)",
-      [idCorso, idAteneo]
+      [idCorso, idAteneo],
     );
 
     await conn.commit();
+    const location = `${req.baseUrl}/${idCorso}/${idAteneo}`;
     res
+      .location(location)
       .status(201)
-      .json({ message: `Corso ${idCorso} associato all'Ateneo ${idAteneo}` });
+      .json({ data: { corsoId: idCorso, ateneoId: idAteneo } });
   } catch (error) {
-    logger.error('Errore POST /corsoateneo/add', { 
+    logger.error("Errore POST /corsoateneo/add", {
       error: error.message,
-      username: req.user?.username 
+      username: req.user?.username,
     });
     if (conn) {
       try {
@@ -264,33 +282,44 @@ router.post("/", authMiddleware, requireRole('admin'), async (req, res) => {
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete("/:corsoId/:ateneoId", authMiddleware, requireRole('admin'), async (req, res) => {
-  try {
-    const { corsoId, ateneoId } = req.params;
-    if (!corsoId || !ateneoId || isNaN(corsoId) || isNaN(ateneoId)) {
-      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non valido', { user: req.user?.username });
-      res.status(400).json({ error: "Id non trovato o non valido" });
-      return;
-    }
-    const [result] = await pool.query(
-      `
+router.delete(
+  "/:corsoId/:ateneoId",
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const { corsoId, ateneoId } = req.params;
+      if (!corsoId || !ateneoId || isNaN(corsoId) || isNaN(ateneoId)) {
+        logger.warn(
+          "DELETE /corsoateneo/delete - Id ateneo o Id corso non valido",
+          { user: req.user?.username },
+        );
+        res.status(400).json({ error: "Id non trovato o non valido" });
+        return;
+      }
+      const [result] = await pool.query(
+        `
       DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
-      [corsoId, ateneoId]
-    );
-    if (result.affectedRows === 0) {
-      logger.warn('DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato', {corsoId, ateneoId, user: req.user?.username });
-      return res.status(404).json({ error: `Id ${corsoId}${ateneoId} non trovati` });
+        [corsoId, ateneoId],
+      );
+      if (result.affectedRows === 0) {
+        logger.warn(
+          "DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato",
+          { corsoId, ateneoId, user: req.user?.username },
+        );
+        return res
+          .status(404)
+          .json({ error: `Id ${corsoId}${ateneoId} non trovati` });
+      }
+      return res.status(204).end();
+    } catch (error) {
+      logger.error("Errore DELETE /corsoateneo/delete", {
+        error: error.message,
+      });
+      res.status(500).json({ error: "Errore nel database" });
     }
-    res.json({
-      message: `Corso con Id ${corsoId} eliminato da Ateneo con id ${ateneoId}`,
-    });
-  } catch (error) {
-    logger.error('Errore DELETE /corsoateneo/delete', { 
-      error: error.message 
-    });
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+  },
+);
 //--------------------------------------------------------------------------------
 
 module.exports = router;

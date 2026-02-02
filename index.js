@@ -3,20 +3,17 @@ const express = require("express");
 const app = express();
 require('dotenv').config();
 app.use(express.json());
-const authRouter = require('./routes/auth');
-app.use('/auth', authRouter);
 
-//importo da ateneo.js
+const authRouter = require('./routes/auth');
 const ateneoRouter = require('./routes/ateneo.js');
-app.use('/atenei',ateneoRouter);
-//importo da tipologia.js
 const tipologiaRouter = require('./routes/tipologia.js');
-app.use('/tipologie',tipologiaRouter);
-//importo da corso.js
 const corsoRouter = require('./routes/corso.js');
-app.use('/corsi',corsoRouter);
-//importo da corsoAteneo.js
 const corsoAteneoRouter = require('./routes/corsoAteneo.js');
+
+app.use('/auth', authRouter);
+app.use('/atenei',ateneoRouter);
+app.use('/tipologie',tipologiaRouter);
+app.use('/corsi',corsoRouter);
 app.use('/corso-ateneo',corsoAteneoRouter);
 
 
