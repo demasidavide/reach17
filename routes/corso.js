@@ -3,7 +3,7 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
-const { validateId } = require("../middleware/validation");
+const { validateId, validateName } = require("../middleware/validation");
 
 //GET per per leggere un corso in base a un id----------------------------
 router.get("/:id", validateId(), async (req, res) => {
@@ -174,19 +174,13 @@ router.delete(
 router.put(
   "/:id",
   validateId(),
+  validateName("nome",1),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
     try {
       const { nome } = req.body;
       const { id } = req.params;
-      if (!nome) {
-        logger.warn("PUT /corso/mod - nome non valido", {
-          user: req.user?.username,
-        });
-        res.status(400).json({ error: "nome non valido" });
-        return;
-      }
       const [result] = await pool.query(
         `UPDATE corso SET nome = ? WHERE id = ?`,
         [nome, corsoId],

@@ -3,7 +3,7 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
-const { validateId } = require("../middleware/validation");
+const { validateId, validateName } = require("../middleware/validation");
 
 //GET per per leggere una tipologia in base a un id----------------------------
 router.get("/:id", validateId(), async (req, res) => {
@@ -71,16 +71,9 @@ router.get("/", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare una tipologia---------------------------------------------------
 //controlli:campo 'nome' vuoto-
-router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
+router.post("/", validateName("nome",3), authMiddleware, requireRole("admin"), async (req, res) => {
   try {
     const { nome } = req.body;
-    if (!nome) {
-      logger.warn("POST /tipologia/add - Nome non valido", {
-        user: req.user?.username,
-      });
-      res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
-      return;
-    }
     const [readName] = await pool.query(
       "SELECT nome FROM tipologia_corso WHERE nome = ?",
       [nome],
@@ -152,6 +145,7 @@ router.delete(
 router.put(
   "/:id",
   validateId(),
+  validateName("nome",3),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {

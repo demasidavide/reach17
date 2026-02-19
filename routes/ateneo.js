@@ -3,7 +3,7 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
-const { validateId } = require("../middleware/validation");
+const { validateId, validateName } = require("../middleware/validation");
 
 //GET per leggere ateneo singolo da id--------------------------------------------
 router.get("/:id", validateId(), async (req, res) => {
@@ -65,15 +65,9 @@ router.get("/", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare un ateneo-------------------------------------------------------
 //controlli:campo 'nome' vuoto- nome gia presente
-router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
+router.post("/", validateName("nome",3), authMiddleware, requireRole("admin"), async (req, res) => {
   try {
     const { nome } = req.body;
-    if (!nome) {
-      logger.warn("POST /ateneo/add - Nome non valido", {
-        user: req.user?.username,
-      });
-      return res.status(400).json({ error: "Campo 'nome' vuoto o non valido" });
-    }
     const [readName] = await pool.query(
       "SELECT nome FROM ateneo WHERE nome = ? ",
       [nome],
@@ -145,19 +139,13 @@ router.delete(
 router.put(
   "/:id",
   validateId(),
+  validateName("nome",3),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
     try {
       const { id } = req.params;
       const { nome } = req.body;
-      if (!nome) {
-        logger.warn("PUT /ateneo/mod - nome non valido", {
-          user: req.user?.username,
-        });
-        res.status(400).json({ error: "Nome non valido" });
-        return;
-      }
       const [result] = await pool.query(
         `UPDATE ateneo SET nome = ? WHERE id = ?`,
         [nome, id],
