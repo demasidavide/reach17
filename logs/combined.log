@@ -6,3 +6,19 @@
 {"level":"warn","message":"DELETE /ateneo/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-02 09:57:29","user":"admin"}
 {"id":"27","level":"warn","message":"GET /ateneo/:id - Ateneo non trovato","service":"reach17-api","timestamp":"2026-02-02 09:58:48"}
 {"error":"Duplicate entry '12-23' for key 'PRIMARY'","level":"error","message":"Errore POST /corsoateneo/add","service":"reach17-api","timestamp":"2026-02-02 10:17:42","username":"admin"}
+{"id":1,"level":"warn","message":"GET /tipologie/:id - Tipologia non trovata","service":"reach17-api","timestamp":"2026-02-19 15:40:42"}
+{"id":1,"level":"warn","message":"GET /tipologie/:id - Tipologia non trovata","service":"reach17-api","timestamp":"2026-02-19 15:40:52"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/jj","service":"reach17-api","timestamp":"2026-02-19 15:40:59","value":"jj"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/d","service":"reach17-api","timestamp":"2026-02-19 15:41:23","value":"d"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/d","service":"reach17-api","timestamp":"2026-02-19 15:41:26","value":"d"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/d","service":"reach17-api","timestamp":"2026-02-19 15:41:42","value":"d"}
+{"id":155,"level":"warn","message":"GET /tipologie/:id - Tipologia non trovata","service":"reach17-api","timestamp":"2026-02-19 15:42:29"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/1l5","service":"reach17-api","timestamp":"2026-02-19 15:42:36","value":"1l5"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/1l5","service":"reach17-api","timestamp":"2026-02-19 15:42:45","value":"1l5"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/1l5","service":"reach17-api","timestamp":"2026-02-19 15:42:47","value":"1l5"}
+{"level":"warn","message":"Validazione fallita per parametro 'id'","path":"/1l5","service":"reach17-api","timestamp":"2026-02-19 15:44:05","value":"1l5"}
+{"level":"warn","message":"GET /corso/:id - Id non valido","service":"reach17-api","timestamp":"2026-02-19 15:46:24"}
+{"level":"warn","message":"DELETE /corso/delete - Id non valido","service":"reach17-api","timestamp":"2026-02-19 15:49:23","user":"admin"}
+{"id":"150","level":"warn","message":"DELETE /corso/delete - Id non trovato","service":"reach17-api","timestamp":"2026-02-19 15:49:29","user":"admin"}
+{"id":"15","level":"warn","message":"DELETE /corso/delete - Id non trovato","service":"reach17-api","timestamp":"2026-02-19 15:49:34","user":"admin"}
+{"level":"warn","message":"GET /ateneo/:id - Id non valido","service":"reach17-api","timestamp":"2026-02-19 15:54:50"}

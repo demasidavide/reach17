@@ -3,6 +3,7 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
+const { validateMultipleIds } = require("../middleware/validation");
 
 //GET per lettura tabella e associazioni
 //aggiunto controllo totale righe,pagine,prew e next page
@@ -284,19 +285,12 @@ router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
 //controlli: id vuoto - id non convertibile in numero - id non trovato
 router.delete(
   "/:corsoId/:ateneoId",
+  validateMultipleIds(),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
     try {
       const { corsoId, ateneoId } = req.params;
-      if (!corsoId || !ateneoId || isNaN(corsoId) || isNaN(ateneoId)) {
-        logger.warn(
-          "DELETE /corsoateneo/delete - Id ateneo o Id corso non valido",
-          { user: req.user?.username },
-        );
-        res.status(400).json({ error: "Id non trovato o non valido" });
-        return;
-      }
       const [result] = await pool.query(
         `
       DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,

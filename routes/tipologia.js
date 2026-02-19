@@ -3,18 +3,12 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
+const { validateId } = require("../middleware/validation");
 
 //GET per per leggere una tipologia in base a un id----------------------------
-router.get("/:id", async (req, res) => {
+router.get("/:id", validateId(), async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id || isNaN(id)) {
-      logger.warn("GET /tipologie/:id - Id non valido", {
-        user: req.user?.username,
-      });
-      res.status(400).json({ error: "Id vuoto o non valido" });
-      return;
-    }
     const [rows] = await pool.query(
       `SELECT * FROM tipologia_corso WHERE id = ?`,
       [id],
@@ -125,18 +119,12 @@ router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
 //controlli: id vuoto - id non convertibile in numero - id non trovato
 router.delete(
   "/:id",
+  validateId(),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
     try {
       const { id } = req.params;
-      if (!id || isNaN(id)) {
-        logger.warn("DELETE /tipologia/delete - Id non valido", {
-          user: req.user?.username,
-        });
-        res.status(400).json({ error: "Id non trovato o non valido" });
-        return;
-      }
       const [result] = await pool.query(
         `
       DELETE FROM tipologia_corso WHERE id = ?`,
@@ -161,36 +149,35 @@ router.delete(
 //--------------------------------------------------------------------------------
 //PUT per modifica nome tipologia----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/:id", authMiddleware, requireRole("admin"), async (req, res) => {
-  try {
-    const { nome } = req.body;
-    const { id } = req.params;
-    if (!id || !nome || isNaN(id)) {
-      logger.warn("PUT /tipologia/mod - Id o Nome non valido", {
-        user: req.user?.username,
+router.put(
+  "/:id",
+  validateId(),
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const { nome } = req.body;
+      const { id } = req.params;
+      const [result] = await pool.query(
+        `UPDATE tipologia_corso SET nome = ? WHERE id = ?`,
+        [nome, id],
+      );
+      if (result.affectedRows === 0) {
+        logger.warn("PUT /tipologia/mod - Id o Nome non trovato", {
+          id,
+          nome,
+          user: req.user?.username,
+        });
+        return res.status(404).json({ error: "Tipologia non trovata" });
+      }
+      res.json({ message: `Tipologia ${id} aggiornata con nome "${nome}"` });
+    } catch (error) {
+      logger.error("Errore PUT /tipologia/mod", {
+        error: error.message,
+        userId: req.user?.userId,
       });
-      res.status(400).json({ error: "Id o nome non valido" });
-      return;
+      res.status(500).json({ error: "Errore nel database" });
     }
-    const [result] = await pool.query(
-      `UPDATE tipologia_corso SET nome = ? WHERE id = ?`,
-      [nome, id],
-    );
-    if (result.affectedRows === 0) {
-      logger.warn("PUT /tipologia/mod - Id o Nome non trovato", {
-        id,
-        nome,
-        user: req.user?.username,
-      });
-      return res.status(404).json({ error: "Tipologia non trovata" });
-    }
-    res.json({ message: `Tipologia ${id} aggiornata con nome "${nome}"` });
-  } catch (error) {
-    logger.error("Errore PUT /tipologia/mod", {
-      error: error.message,
-      userId: req.user?.userId,
-    });
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+  },
+);
 module.exports = router;

@@ -3,18 +3,12 @@ const pool = require("../db");
 const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
+const { validateId } = require("../middleware/validation");
 
 //GET per per leggere un corso in base a un id----------------------------
-router.get("/:id", async (req, res) => {
+router.get("/:id", validateId(), async (req, res) => {
   try {
     const { id } = req.params;
-    if (!id || isNaN(id)) {
-      logger.warn("GET /corso/:id - Id non valido", {
-        user: req.user?.username,
-      });
-      res.status(400).json({ error: "Id vuoto o non valido" });
-      return;
-    }
     const [rows] = await pool.query(`SELECT * FROM corso WHERE id = ?`, [id]);
     if (rows.length === 0) {
       logger.warn("GET /corsi/:id - Corso non trovato", {
@@ -147,18 +141,12 @@ router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
 //controlli: id vuoto - id non convertibile in numero - id non trovato
 router.delete(
   "/:id",
+  validateId(),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {
     try {
       const { id } = req.params;
-      if (!id || isNaN(id)) {
-        logger.warn("DELETE /corso/delete - Id non valido", {
-          user: req.user?.username,
-        });
-        res.status(400).json({ error: "Id non trovato o non valido" });
-        return;
-      }
       const [result] = await pool.query(
         `
       DELETE FROM corso WHERE id = ?`,
@@ -183,37 +171,42 @@ router.delete(
 //--------------------------------------------------------------------------------
 //PUT per modifica nome corso----------------------------------------------------
 //controlli:id e nome vuoti - id non convertibile in numero - id non trovato
-router.put("/:id", authMiddleware, requireRole("admin"), async (req, res) => {
-  try {
-    const { nome } = req.body;
-    const { id } = req.params;
-    const corsoId = Number(id);
-    if (!corsoId || !nome || isNaN(corsoId)) {
-      logger.warn("PUT /corso/mod - Id o nome non valido", {
-        user: req.user?.username,
+router.put(
+  "/:id",
+  validateId(),
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const { nome } = req.body;
+      const { id } = req.params;
+      if (!nome) {
+        logger.warn("PUT /corso/mod - nome non valido", {
+          user: req.user?.username,
+        });
+        res.status(400).json({ error: "nome non valido" });
+        return;
+      }
+      const [result] = await pool.query(
+        `UPDATE corso SET nome = ? WHERE id = ?`,
+        [nome, corsoId],
+      );
+      if (result.affectedRows === 0) {
+        logger.warn("PUT /corso/mod - Id corso non trovato", {
+          corsoId,
+          user: req.user?.username,
+        });
+        return res.status(404).json({ error: "Corso non trovato" });
+      }
+      res.json({ message: `Corso ${corsoId} aggiornato con nome "${nome}"` });
+    } catch (error) {
+      logger.error("Errore PUT /corso/mod", {
+        error: error.message,
+        userId: req.user?.userId,
       });
-      res.status(400).json({ error: "Id o nome non valido" });
-      return;
+      res.status(500).json({ error: "Errore nel database" });
     }
-    const [result] = await pool.query(
-      `UPDATE corso SET nome = ? WHERE id = ?`,
-      [nome, corsoId],
-    );
-    if (result.affectedRows === 0) {
-      logger.warn("PUT /corso/mod - Id corso non trovato", {
-        corsoId,
-        user: req.user?.username,
-      });
-      return res.status(404).json({ error: "Corso non trovato" });
-    }
-    res.json({ message: `Corso ${corsoId} aggiornato con nome "${nome}"` });
-  } catch (error) {
-    logger.error("Errore PUT /corso/mod", {
-      error: error.message,
-      userId: req.user?.userId,
-    });
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+  },
+);
 
 module.exports = router;
