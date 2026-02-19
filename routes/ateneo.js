@@ -4,6 +4,10 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
 const { validateId, validateName } = require("../middleware/validation");
+const {
+  getPaginationParams,
+  getPaginationMeta,
+} = require("../utility/pagination");
 
 //GET per leggere ateneo singolo da id--------------------------------------------
 router.get("/:id", validateId(), async (req, res) => {
@@ -31,9 +35,7 @@ router.get("/:id", validateId(), async (req, res) => {
 //aggiunto controllo totale righe,pagine,prew e next page
 router.get("/", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(req.query);
     const [rows] = await pool.query(`SELECT * FROM ateneo LIMIT ? OFFSET ?`, [
       limit,
       offset,
@@ -42,17 +44,10 @@ router.get("/", async (req, res) => {
       SELECT COUNT(*) as total 
       FROM ateneo`);
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const pagination = getPaginationMeta(total, page, limit);
     res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      pagination,
     });
   } catch (error) {
     logger.error("Errore GET /ateneo/read", {
@@ -65,41 +60,47 @@ router.get("/", async (req, res) => {
 //--------------------------------------------------------------------------------
 //POST per creare un ateneo-------------------------------------------------------
 //controlli:campo 'nome' vuoto- nome gia presente
-router.post("/", validateName("nome",3), authMiddleware, requireRole("admin"), async (req, res) => {
-  try {
-    const { nome } = req.body;
-    const [readName] = await pool.query(
-      "SELECT nome FROM ateneo WHERE nome = ? ",
-      [nome],
-    );
-    if (readName.length > 0) {
-      logger.warn(`POST /ateneo/add - Nome gia presente`, {
-        nome,
-        user: req.user?.username,
-      });
-      return res
-        .status(409)
-        .json({ error: `Attenzione nome ${nome} già presente` });
-    }
-    const [result] = await pool.query(
-      `
+router.post(
+  "/",
+  validateName("nome", 3),
+  authMiddleware,
+  requireRole("admin"),
+  async (req, res) => {
+    try {
+      const { nome } = req.body;
+      const [readName] = await pool.query(
+        "SELECT nome FROM ateneo WHERE nome = ? ",
+        [nome],
+      );
+      if (readName.length > 0) {
+        logger.warn(`POST /ateneo/add - Nome gia presente`, {
+          nome,
+          user: req.user?.username,
+        });
+        return res
+          .status(409)
+          .json({ error: `Attenzione nome ${nome} già presente` });
+      }
+      const [result] = await pool.query(
+        `
         INSERT INTO ateneo (nome) VALUES (?)`,
-      [nome],
-    );
+        [nome],
+      );
 
-    const location = `${req.baseUrl}/${result.insertId}`;
-    res
-      .location(location)
-      .status(201)
-      .json({ data: { id: result.insertId, nome } });
-  } catch (error) {
-    logger.error("Errore POST /ateneo/add", {
-      error: error.message,
-      username: req.user?.username,
-    });
-    res.status(500).json({ error: "Errore database" });
-  }
-});
+      const location = `${req.baseUrl}/${result.insertId}`;
+      res
+        .location(location)
+        .status(201)
+        .json({ data: { id: result.insertId, nome } });
+    } catch (error) {
+      logger.error("Errore POST /ateneo/add", {
+        error: error.message,
+        username: req.user?.username,
+      });
+      res.status(500).json({ error: "Errore database" });
+    }
+  },
+);
 //--------------------------------------------------------------------------------
 //DELETE per cancellazione ateneo-------------------------------------------------
 //passato con json e req.body
@@ -139,7 +140,7 @@ router.delete(
 router.put(
   "/:id",
   validateId(),
-  validateName("nome",3),
+  validateName("nome", 3),
   authMiddleware,
   requireRole("admin"),
   async (req, res) => {

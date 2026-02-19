@@ -4,6 +4,7 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
 const { validateId, validateName } = require("../middleware/validation");
+const { getPaginationParams, getPaginationMeta } = require("../utility/pagination");
 
 //GET per per leggere una tipologia in base a un id----------------------------
 router.get("/:id", validateId(), async (req, res) => {
@@ -35,9 +36,7 @@ router.get("/:id", validateId(), async (req, res) => {
 //aggiunto controllo totale righe,pagine,prew e next page
 router.get("/", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(req.query);
     const [rows] = await pool.query(
       `
         SELECT * FROM tipologia_corso LIMIT ? OFFSET ?;`,
@@ -47,18 +46,10 @@ router.get("/", async (req, res) => {
       SELECT COUNT(*) as total 
       FROM tipologia_corso`);
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
-
+    const pagination = getPaginationMeta(total, page, limit);
     res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      pagination,
     });
   } catch (error) {
     logger.error("Errore GET /tipologia/read", {

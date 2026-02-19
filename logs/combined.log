@@ -26,3 +26,4 @@
 {"length":1,"level":"warn","message":"Validazione fallita per campo 'nome' - lunghezza insufficiente","minLength":3,"path":"/","service":"reach17-api","timestamp":"2026-02-19 16:09:34","value":"d"}
 {"length":1,"level":"warn","message":"Validazione fallita per campo 'nome' - lunghezza insufficiente","minLength":3,"path":"/","service":"reach17-api","timestamp":"2026-02-19 16:09:45","value":"d"}
 {"length":1,"level":"warn","message":"Validazione fallita per campo 'nome' - lunghezza insufficiente","minLength":2,"path":"/","service":"reach17-api","timestamp":"2026-02-19 16:09:50","value":"d"}
+{"level":"warn","message":"GET /corsoateneo/search/name - Nome non valido","service":"reach17-api","timestamp":"2026-02-19 17:02:11"}

@@ -4,14 +4,16 @@ const { authMiddleware, requireRole } = require("../middleware/auth");
 const logger = require("../logger");
 const router = express.Router();
 const { validateMultipleIds } = require("../middleware/validation");
+const {
+  getPaginationParams,
+  getPaginationMeta,
+} = require("../utility/pagination");
 
 //GET per lettura tabella e associazioni
 //aggiunto controllo totale righe,pagine,prew e next page
 router.get("/", async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(req.query);
     const [rows] = await pool.query(
       `
        SELECT 
@@ -29,18 +31,11 @@ router.get("/", async (req, res) => {
       SELECT COUNT(*) as total 
       FROM corso_ateneo`);
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const pagination = getPaginationMeta(total, page, limit);
 
     res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      pagination,
     });
   } catch (error) {
     logger.error("Errore GET /corsoateneo/read", {
@@ -56,9 +51,7 @@ router.get("/", async (req, res) => {
 router.get("/search/name", async (req, res) => {
   try {
     const { nome } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(req.query);
     if (!nome || nome.trim().length < 1) {
       logger.warn("GET /corsoateneo/search/name - Nome non valido", {
         user: req.user?.username,
@@ -90,18 +83,11 @@ router.get("/search/name", async (req, res) => {
       [`%${nome}%`],
     );
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const pagination = getPaginationMeta(total, page, limit);
 
     res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      pagination,
     });
   } catch (error) {
     logger.error("Errore GET /corsoateneo/search/name", {
@@ -117,9 +103,7 @@ router.get("/search/name", async (req, res) => {
 router.get("/search/type", async (req, res) => {
   try {
     const { tipo } = req.query;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const offset = (page - 1) * limit;
+    const { page, limit, offset } = getPaginationParams(req.query);
 
     if (!tipo || tipo.trim().length === 0) {
       const [rows] = await pool.query(
@@ -142,18 +126,11 @@ router.get("/search/type", async (req, res) => {
       SELECT COUNT(*) as total 
       FROM corso_ateneo`);
       const total = countResult[0].total;
-      const totalPages = Math.ceil(total / limit);
+      const pagination = getPaginationMeta(total, page, limit);
 
       res.json({
         data: rows,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-          hasNextPage: page < totalPages,
-          hasPrevPage: page > 1,
-        },
+        pagination,
       });
       return;
     }
@@ -185,18 +162,11 @@ router.get("/search/type", async (req, res) => {
       [`%${tipo}%`],
     );
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const pagination = getPaginationMeta(total, page, limit);
 
     res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages,
-        hasNextPage: page < totalPages,
-        hasPrevPage: page > 1,
-      },
+      pagination,
     });
   } catch (error) {
     logger.error("Errore GET /corsoateneo/search/type", {
