@@ -56,11 +56,15 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
 
   try {
     await conn.beginTransaction();
-    logger.debug("Transazione iniziata", { nome, user: username });
+    logger.debug("Transazione iniziata", { 
+      idCorso, 
+      idAteneo, 
+      user: username 
+    });
+
     // Verifica se il corso esiste
     const corsoExists = await corsoAteneoRepo.corsoExists(idCorso);
     if (!corsoExists) {
-      await conn.rollback();
       logger.warn("Corso non trovato durante creazione relazione", {
         idCorso,
         user: username,
@@ -71,7 +75,6 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
     // Verifica se l'ateneo esiste
     const ateneoExists = await corsoAteneoRepo.ateneoExists(idAteneo);
     if (!ateneoExists) {
-      await conn.rollback();
       logger.warn("Ateneo non trovato durante creazione relazione", {
         idAteneo,
         user: username,
@@ -82,7 +85,6 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
     // Verifica se la relazione esiste già
     const relationExists = await corsoAteneoRepo.relationExists(idCorso, idAteneo);
     if (relationExists) {
-      await conn.rollback();
       logger.warn("Tentativo di creare relazione duplicata", {
         idCorso,
         idAteneo,
@@ -98,8 +100,7 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
     await corsoAteneoRepo.create(idCorso, idAteneo, conn);
 
     await conn.commit();
-
-    logger.info("Relazione corso-ateneo creata", {
+    logger.info("Transazione committata con successo", {
       idCorso,
       idAteneo,
       user: username,
@@ -108,12 +109,23 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
     return { idCorso, idAteneo };
   } catch (error) {
     if (conn) {
-      await conn.rollback();
-      logger.warn("Transazione rollback eseguito", {
-          nome,
+      try {
+        await conn.rollback();
+        logger.warn("Transazione rollback eseguito", {
+          idCorso,
+          idAteneo,
           user: username,
           error: error.message
         });
+      } catch (rollbackError) {
+        logger.error("Errore durante rollback", {
+          idCorso,
+          idAteneo,
+          user: username,
+          originalError: error.message,
+          rollbackError: rollbackError.message
+        });
+      }
     }
     throw error;
   } finally {

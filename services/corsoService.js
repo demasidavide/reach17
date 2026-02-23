@@ -32,16 +32,17 @@ const getAllCorsi = async (page, limit, offset) => {
 /**
  * Crea un nuovo corso (con transazione)
  */
+
 const createCorso = async (nome, tipologiaId, username) => {
   const conn = await pool.getConnection();
   
   try {
     await conn.beginTransaction();
-    logger.debug("Transazione iniziata", { nome, user: username });
+    logger.debug("Transazione iniziata", { nome, tipologiaId, user: username });
+
     // Verifica se la tipologia esiste
     const tipologiaExists = await corsoRepo.tipologiaExists(tipologiaId);
     if (!tipologiaExists) {
-      await conn.rollback();
       logger.warn("Tipologia non trovata durante creazione corso", {
         tipologiaId,
         user: username,
@@ -52,8 +53,10 @@ const createCorso = async (nome, tipologiaId, username) => {
     // Verifica duplicato nome
     const existing = await corsoRepo.findByName(nome);
     if (existing) {
-      await conn.rollback();
-      logger.warn("Tentativo di creare corso duplicato", { nome, user: username });
+      logger.warn("Tentativo di creare corso duplicato", { 
+        nome, 
+        user: username 
+      });
       throw new AppError(`Corso con nome "${nome}" già esistente`, 409);
     }
 
@@ -61,20 +64,35 @@ const createCorso = async (nome, tipologiaId, username) => {
     const id = await corsoRepo.create(nome, tipologiaId, conn);
 
     await conn.commit();
-
-    logger.info("Corso creato", { id, nome, tipologiaId, user: username });
+    logger.info("Transazione committata con successo", { 
+      id, 
+      nome, 
+      tipologiaId, 
+      user: username 
+    });
 
     return { id, nome, tipologiaId };
   } catch (error) {
     if (conn) {
-      await conn.rollback();
-      logger.warn("Transazione rollback eseguito", { 
+      try {
+        await conn.rollback();
+        logger.warn("Transazione rollback eseguito", { 
           nome,
+          tipologiaId,
           user: username,
           error: error.message
         });
+      } catch (rollbackError) {
+        logger.error("Errore durante rollback", {
+          nome,
+          tipologiaId,
+          user: username,
+          originalError: error.message,
+          rollbackError: rollbackError.message
+        });
+      }
     }
-    throw error;
+    throw error; // Rilancia per globalErrorHandler
   } finally {
     if (conn) conn.release();
   }

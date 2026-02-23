@@ -51,6 +51,9 @@ router.delete(
 module.exports = router;
 
 
+//                              VECCHIO CODICE MANTENUTO PER CONFRONTO
+
+
 // const express = require("express");
 // const pool = require("../db");
 // const { authMiddleware, requireRole } = require("../middleware/auth");

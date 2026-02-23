@@ -17,6 +17,8 @@ router.post("/verify", asyncHandler(authController.verifyToken));
 
 module.exports = router;
 
+//                              VECCHIO CODICE MANTENUTO PER CONFRONTO
+
 // const express = require('express');
 // const jwt = require('jsonwebtoken');
 // const bcrypt = require('bcryptjs');
