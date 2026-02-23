@@ -1,289 +1,328 @@
 const express = require("express");
-const pool = require("../db");
-const { authMiddleware, requireRole } = require("../middleware/auth");
-const logger = require("../logger");
 const router = express.Router();
-const { validateMultipleIds } = require("../middleware/validation");
-const {
-  getPaginationParams,
-  getPaginationMeta,
-} = require("../utility/pagination");
+const { authMiddleware, requireRole } = require("../middleware/auth");
+const { validateMultipleIds, validateBodyId } = require("../middleware/validation");
+const { asyncHandler } = require("../middleware/errorHandler");
+const corsoAteneoController = require("../controllers/corsoAteneoController");
+
+// GET / - Legge tutte le relazioni corso-ateneo
+router.get("/", asyncHandler(corsoAteneoController.getAll));
+
+// GET /search/name - Ricerca per nome corso
+router.get("/search/name", asyncHandler(corsoAteneoController.searchByName));
+
+// GET /search/type - Ricerca per tipologia
+router.get("/search/type", asyncHandler(corsoAteneoController.searchByType));
+
+// POST / - Crea una relazione corso-ateneo
+router.post(
+  "/",
+  authMiddleware,
+  requireRole("admin"),
+  validateBodyId("idCorso"),
+  validateBodyId("idAteneo"),
+  asyncHandler(corsoAteneoController.create)
+);
+
+// DELETE /:corsoId/:ateneoId - Elimina una relazione
+router.delete(
+  "/:corsoId/:ateneoId",
+  authMiddleware,
+  requireRole("admin"),
+  validateMultipleIds("corsoId", "ateneoId"),
+  asyncHandler(corsoAteneoController.deleteRelation)
+);
+
+module.exports = router;
+
+
+
+// const express = require("express");
+// const pool = require("../db");
+// const { authMiddleware, requireRole } = require("../middleware/auth");
+// const logger = require("../logger");
+// const router = express.Router();
+// const { validateMultipleIds } = require("../middleware/validation");
+// const {
+//   getPaginationParams,
+//   getPaginationMeta,
+// } = require("../utility/pagination");
 
 //GET per lettura tabella e associazioni
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/", async (req, res) => {
-  try {
-    const { page, limit, offset } = getPaginationParams(req.query);
-    const [rows] = await pool.query(
-      `
-       SELECT 
-    corso.id AS id_corso,
-    corso.nome AS nome_corso,
-    ateneo.id AS id_ateneo,
-    ateneo.nome AS nome_ateneo
-    FROM corso_ateneo
-    INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-    INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-    LIMIT ? OFFSET ?;`,
-      [limit, offset],
-    );
-    const [countResult] = await pool.query(`
-      SELECT COUNT(*) as total 
-      FROM corso_ateneo`);
-    const total = countResult[0].total;
-    const pagination = getPaginationMeta(total, page, limit);
+// router.get("/", async (req, res) => {
+//   try {
+//     const { page, limit, offset } = getPaginationParams(req.query);
+//     const [rows] = await pool.query(
+//       `
+//        SELECT 
+//     corso.id AS id_corso,
+//     corso.nome AS nome_corso,
+//     ateneo.id AS id_ateneo,
+//     ateneo.nome AS nome_ateneo
+//     FROM corso_ateneo
+//     INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//     INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+//     LIMIT ? OFFSET ?;`,
+//       [limit, offset],
+//     );
+//     const [countResult] = await pool.query(`
+//       SELECT COUNT(*) as total 
+//       FROM corso_ateneo`);
+//     const total = countResult[0].total;
+//     const pagination = getPaginationMeta(total, page, limit);
 
-    res.json({
-      data: rows,
-      pagination,
-    });
-  } catch (error) {
-    logger.error("Errore GET /corsoateneo/read", {
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+//     res.json({
+//       data: rows,
+//       pagination,
+//     });
+//   } catch (error) {
+//     logger.error("Errore GET /corsoateneo/read", {
+//       error: error.message,
+//       stack: error.stack,
+//     });
+//     res.status(500).json({ error: "Errore nel database" });
+//   }
+// });
 //------------------------------------------------------------------------
 //GET filtro per nome corso-----------------------------------------------
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/search/name", async (req, res) => {
-  try {
-    const { nome } = req.query;
-    const { page, limit, offset } = getPaginationParams(req.query);
-    if (!nome || nome.trim().length < 1) {
-      logger.warn("GET /corsoateneo/search/name - Nome non valido", {
-        user: req.user?.username,
-      });
-      return res
-        .status(400)
-        .json({ error: "Il nome deve contenere almeno un carattere" });
-    }
-    const [rows] = await pool.query(
-      `
-      SELECT 
-        corso.id AS id_corso,
-        corso.nome AS nome_corso,
-        ateneo.id AS id_ateneo,
-        ateneo.nome AS nome_ateneo
-      FROM corso_ateneo
-      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-      INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-      WHERE LOWER(corso.nome) LIKE LOWER(?)
-      LIMIT ? OFFSET ?`,
-      [`%${nome}%`, limit, offset],
-    );
-    const [countResult] = await pool.query(
-      `
-      SELECT COUNT(*) as total 
-      FROM corso_ateneo
-      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-      WHERE LOWER(corso.nome) LIKE LOWER(?)`,
-      [`%${nome}%`],
-    );
-    const total = countResult[0].total;
-    const pagination = getPaginationMeta(total, page, limit);
+// router.get("/search/name", async (req, res) => {
+//   try {
+//     const { nome } = req.query;
+//     const { page, limit, offset } = getPaginationParams(req.query);
+//     if (!nome || nome.trim().length < 1) {
+//       logger.warn("GET /corsoateneo/search/name - Nome non valido", {
+//         user: req.user?.username,
+//       });
+//       return res
+//         .status(400)
+//         .json({ error: "Il nome deve contenere almeno un carattere" });
+//     }
+//     const [rows] = await pool.query(
+//       `
+//       SELECT 
+//         corso.id AS id_corso,
+//         corso.nome AS nome_corso,
+//         ateneo.id AS id_ateneo,
+//         ateneo.nome AS nome_ateneo
+//       FROM corso_ateneo
+//       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//       INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+//       WHERE LOWER(corso.nome) LIKE LOWER(?)
+//       LIMIT ? OFFSET ?`,
+//       [`%${nome}%`, limit, offset],
+//     );
+//     const [countResult] = await pool.query(
+//       `
+//       SELECT COUNT(*) as total 
+//       FROM corso_ateneo
+//       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//       WHERE LOWER(corso.nome) LIKE LOWER(?)`,
+//       [`%${nome}%`],
+//     );
+//     const total = countResult[0].total;
+//     const pagination = getPaginationMeta(total, page, limit);
 
-    res.json({
-      data: rows,
-      pagination,
-    });
-  } catch (error) {
-    logger.error("Errore GET /corsoateneo/search/name", {
-      error: error.message,
-      stack: error.stack,
-    });
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+//     res.json({
+//       data: rows,
+//       pagination,
+//     });
+//   } catch (error) {
+//     logger.error("Errore GET /corsoateneo/search/name", {
+//       error: error.message,
+//       stack: error.stack,
+//     });
+//     res.status(500).json({ error: "Errore nel database" });
+//   }
+// });
 //------------------------------------------------------------------------
 //GET filtro per tipologia corso-----------------------------------------------
 //aggiunto controllo totale righe,pagine,prew e next page
-router.get("/search/type", async (req, res) => {
-  try {
-    const { tipo } = req.query;
-    const { page, limit, offset } = getPaginationParams(req.query);
+// router.get("/search/type", async (req, res) => {
+//   try {
+//     const { tipo } = req.query;
+//     const { page, limit, offset } = getPaginationParams(req.query);
 
-    if (!tipo || tipo.trim().length === 0) {
-      const [rows] = await pool.query(
-        `
-        SELECT 
-          corso.id AS id_corso,
-          corso.nome AS nome_corso,
-          tipologia_corso.id AS id_tipologia,
-          tipologia_corso.nome AS nome_tipologia,
-          ateneo.id AS id_ateneo,
-          ateneo.nome AS nome_ateneo
-        FROM corso_ateneo
-        INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-        INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-        INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
-        LIMIT ? OFFSET ?;`,
-        [limit, offset],
-      );
-      const [countResult] = await pool.query(`
-      SELECT COUNT(*) as total 
-      FROM corso_ateneo`);
-      const total = countResult[0].total;
-      const pagination = getPaginationMeta(total, page, limit);
+//     if (!tipo || tipo.trim().length === 0) {
+//       const [rows] = await pool.query(
+//         `
+//         SELECT 
+//           corso.id AS id_corso,
+//           corso.nome AS nome_corso,
+//           tipologia_corso.id AS id_tipologia,
+//           tipologia_corso.nome AS nome_tipologia,
+//           ateneo.id AS id_ateneo,
+//           ateneo.nome AS nome_ateneo
+//         FROM corso_ateneo
+//         INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//         INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+//         INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+//         LIMIT ? OFFSET ?;`,
+//         [limit, offset],
+//       );
+//       const [countResult] = await pool.query(`
+//       SELECT COUNT(*) as total 
+//       FROM corso_ateneo`);
+//       const total = countResult[0].total;
+//       const pagination = getPaginationMeta(total, page, limit);
 
-      res.json({
-        data: rows,
-        pagination,
-      });
-      return;
-    }
+//       res.json({
+//         data: rows,
+//         pagination,
+//       });
+//       return;
+//     }
 
-    const [rows] = await pool.query(
-      `
-      SELECT 
-        corso.id AS id_corso,
-        corso.nome AS nome_corso,
-        tipologia_corso.id AS id_tipologia,
-        tipologia_corso.nome AS nome_tipologia,
-        ateneo.id AS id_ateneo,
-        ateneo.nome AS nome_ateneo
-      FROM corso_ateneo
-      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-      INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
-      INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
-      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)
-      LIMIT ? OFFSET ?`,
-      [`%${tipo}%`, limit, offset],
-    );
-    const [countResult] = await pool.query(
-      `
-      SELECT COUNT(*) as total 
-      FROM corso_ateneo
-      INNER JOIN corso ON corso_ateneo.corso_id = corso.id
-      INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
-      WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`,
-      [`%${tipo}%`],
-    );
-    const total = countResult[0].total;
-    const pagination = getPaginationMeta(total, page, limit);
+//     const [rows] = await pool.query(
+//       `
+//       SELECT 
+//         corso.id AS id_corso,
+//         corso.nome AS nome_corso,
+//         tipologia_corso.id AS id_tipologia,
+//         tipologia_corso.nome AS nome_tipologia,
+//         ateneo.id AS id_ateneo,
+//         ateneo.nome AS nome_ateneo
+//       FROM corso_ateneo
+//       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//       INNER JOIN ateneo ON corso_ateneo.ateneo_id = ateneo.id
+//       INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+//       WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)
+//       LIMIT ? OFFSET ?`,
+//       [`%${tipo}%`, limit, offset],
+//     );
+//     const [countResult] = await pool.query(
+//       `
+//       SELECT COUNT(*) as total 
+//       FROM corso_ateneo
+//       INNER JOIN corso ON corso_ateneo.corso_id = corso.id
+//       INNER JOIN tipologia_corso ON corso.tipologia_id = tipologia_corso.id
+//       WHERE LOWER(tipologia_corso.nome) LIKE LOWER(?)`,
+//       [`%${tipo}%`],
+//     );
+//     const total = countResult[0].total;
+//     const pagination = getPaginationMeta(total, page, limit);
 
-    res.json({
-      data: rows,
-      pagination,
-    });
-  } catch (error) {
-    logger.error("Errore GET /corsoateneo/search/type", {
-      error: error.message,
-      stack: error.stack,
-    });
-    console.error(error);
-    res.status(500).json({ error: "Errore nel database" });
-  }
-});
+//     res.json({
+//       data: rows,
+//       pagination,
+//     });
+//   } catch (error) {
+//     logger.error("Errore GET /corsoateneo/search/type", {
+//       error: error.message,
+//       stack: error.stack,
+//     });
+//     console.error(error);
+//     res.status(500).json({ error: "Errore nel database" });
+//   }
+// });
 //------------------------------------------------------------------------
 //POST transazione per associazione corso-ateneo-------------------------------------
 //controlli: id,nome vuoti - lettura se tipologia presente -
 
-router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
-  let conn;
-  try {
-    const { idCorso, idAteneo } = req.body;
-    if (!idCorso || !idAteneo) {
-      logger.warn("POST /corsoateneo/add - Id ateneo o Id corso non valido", {
-        user: req.user?.username,
-      });
-      res.status(400).json({ error: "Id Corso o Id Ateneo non valido" });
-      return;
-    }
+// router.post("/", authMiddleware, requireRole("admin"), async (req, res) => {
+//   let conn;
+//   try {
+//     const { idCorso, idAteneo } = req.body;
+//     if (!idCorso || !idAteneo) {
+//       logger.warn("POST /corsoateneo/add - Id ateneo o Id corso non valido", {
+//         user: req.user?.username,
+//       });
+//       res.status(400).json({ error: "Id Corso o Id Ateneo non valido" });
+//       return;
+//     }
 
-    conn = await pool.getConnection();
-    await conn.beginTransaction();
+//     conn = await pool.getConnection();
+//     await conn.beginTransaction();
     //controllo se id corso esiste
-    const [readCorso] = await conn.query("SELECT id FROM corso WHERE id = ?", [
-      idCorso,
-    ]);
-    if (readCorso.length === 0) {
-      await conn.rollback();
-      logger.warn("POST /corsoateneo/add -transactio- Id corso non trovato", {
-        idCorso,
-        user: req.user?.username,
-      });
-      return res
-        .status(404)
-        .json({ error: `Attenzione Id corso ${idCorso} non trovato` });
-    }
-    const [readAteneo] = await conn.query(
-      "SELECT id FROM ateneo WHERE id = ? ",
-      [idAteneo],
-    );
-    if (readAteneo.length === 0) {
-      await conn.rollback();
-      logger.warn("POST /corsoateneo/add -transaction- Id ateneo non trovato", {
-        idAteneo,
-        user: req.user?.username,
-      });
-      return res
-        .status(404)
-        .json({ error: `Attenzione Id Ateneo ${idAteneo} non trovato` });
-    }
+//     const [readCorso] = await conn.query("SELECT id FROM corso WHERE id = ?", [
+//       idCorso,
+//     ]);
+//     if (readCorso.length === 0) {
+//       await conn.rollback();
+//       logger.warn("POST /corsoateneo/add -transactio- Id corso non trovato", {
+//         idCorso,
+//         user: req.user?.username,
+//       });
+//       return res
+//         .status(404)
+//         .json({ error: `Attenzione Id corso ${idCorso} non trovato` });
+//     }
+//     const [readAteneo] = await conn.query(
+//       "SELECT id FROM ateneo WHERE id = ? ",
+//       [idAteneo],
+//     );
+//     if (readAteneo.length === 0) {
+//       await conn.rollback();
+//       logger.warn("POST /corsoateneo/add -transaction- Id ateneo non trovato", {
+//         idAteneo,
+//         user: req.user?.username,
+//       });
+//       return res
+//         .status(404)
+//         .json({ error: `Attenzione Id Ateneo ${idAteneo} non trovato` });
+//     }
 
-    const [result] = await conn.query(
-      "INSERT INTO corso_ateneo (corso_id, ateneo_id) VALUES (?, ?)",
-      [idCorso, idAteneo],
-    );
+//     const [result] = await conn.query(
+//       "INSERT INTO corso_ateneo (corso_id, ateneo_id) VALUES (?, ?)",
+//       [idCorso, idAteneo],
+//     );
 
-    await conn.commit();
-    const location = `${req.baseUrl}/${idCorso}/${idAteneo}`;
-    res
-      .location(location)
-      .status(201)
-      .json({ data: { corsoId: idCorso, ateneoId: idAteneo } });
-  } catch (error) {
-    logger.error("Errore POST /corsoateneo/add", {
-      error: error.message,
-      username: req.user?.username,
-    });
-    if (conn) {
-      try {
-        await conn.rollback();
-      } catch (e) {}
-    }
-    res.status(500).json({ error: "Errore nel database" });
-  } finally {
-    if (conn) conn.release();
-  }
-});
+//     await conn.commit();
+//     const location = `${req.baseUrl}/${idCorso}/${idAteneo}`;
+//     res
+//       .location(location)
+//       .status(201)
+//       .json({ data: { corsoId: idCorso, ateneoId: idAteneo } });
+//   } catch (error) {
+//     logger.error("Errore POST /corsoateneo/add", {
+//       error: error.message,
+//       username: req.user?.username,
+//     });
+//     if (conn) {
+//       try {
+//         await conn.rollback();
+//       } catch (e) {}
+//     }
+//     res.status(500).json({ error: "Errore nel database" });
+//   } finally {
+//     if (conn) conn.release();
+//   }
+// });
 //------------------------------------------------------------------------
 //DELETE per cancellazione corso-------------------------------------------------
 //controlli: id vuoto - id non convertibile in numero - id non trovato
-router.delete(
-  "/:corsoId/:ateneoId",
-  validateMultipleIds(),
-  authMiddleware,
-  requireRole("admin"),
-  async (req, res) => {
-    try {
-      const { corsoId, ateneoId } = req.params;
-      const [result] = await pool.query(
-        `
-      DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
-        [corsoId, ateneoId],
-      );
-      if (result.affectedRows === 0) {
-        logger.warn(
-          "DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato",
-          { corsoId, ateneoId, user: req.user?.username },
-        );
-        return res
-          .status(404)
-          .json({ error: `Id ${corsoId}${ateneoId} non trovati` });
-      }
-      return res.status(204).end();
-    } catch (error) {
-      logger.error("Errore DELETE /corsoateneo/delete", {
-        error: error.message,
-      });
-      res.status(500).json({ error: "Errore nel database" });
-    }
-  },
-);
-//--------------------------------------------------------------------------------
+// router.delete(
+//   "/:corsoId/:ateneoId",
+//   validateMultipleIds(),
+//   authMiddleware,
+//   requireRole("admin"),
+//   async (req, res) => {
+//     try {
+//       const { corsoId, ateneoId } = req.params;
+//       const [result] = await pool.query(
+//         `
+//       DELETE FROM corso_ateneo WHERE corso_id = ? AND ateneo_id = ? `,
+//         [corsoId, ateneoId],
+//       );
+//       if (result.affectedRows === 0) {
+//         logger.warn(
+//           "DELETE /corsoateneo/delete - Id ateneo o Id corso non trovato",
+//           { corsoId, ateneoId, user: req.user?.username },
+//         );
+//         return res
+//           .status(404)
+//           .json({ error: `Id ${corsoId}${ateneoId} non trovati` });
+//       }
+//       return res.status(204).end();
+//     } catch (error) {
+//       logger.error("Errore DELETE /corsoateneo/delete", {
+//         error: error.message,
+//       });
+//       res.status(500).json({ error: "Errore nel database" });
+//     }
+//   },
+// );
+// //--------------------------------------------------------------------------------
 
-module.exports = router;
+// module.exports = router;
