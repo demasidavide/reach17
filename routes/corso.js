@@ -6,17 +6,17 @@ const { validateId, validateName, validateBodyId } = require("../middleware/vali
 const { asyncHandler } = require("../middleware/errorHandler");
 const corsoController = require("../controllers/corsoController");
 
-// GET /:id - Legge un corso per ID con tipologia
-router.get(
-  "/:id",
-  validateId(),
-  asyncHandler(corsoController.getById)
-);
 
 // GET / - Legge tutti i corsi con paginazione
 router.get(
   "/",
   asyncHandler(corsoController.getAll)
+);
+// GET /:id - Legge un corso per ID con tipologia
+router.get(
+  "/:id",
+  validateId(),
+  asyncHandler(corsoController.getById)
 );
 
 // POST / - Crea un nuovo corso

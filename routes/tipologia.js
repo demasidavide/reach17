@@ -5,17 +5,17 @@ const { validateId, validateName } = require("../middleware/validation");
 const { asyncHandler } = require("../middleware/errorHandler");
 const tipologiaController = require("../controllers/tipologiaController");
 
-// GET /:id legge una tipologia per ID
-router.get(
-  "/:id",
-  validateId(),
-  asyncHandler(tipologiaController.getById)
-);
 
 // GET / legge tutte le tipologie con paginazione
 router.get(
   "/",
   asyncHandler(tipologiaController.getAll)
+);
+// GET /:id legge una tipologia per ID
+router.get(
+  "/:id",
+  validateId(),
+  asyncHandler(tipologiaController.getById)
 );
 
 // POST / crea una nuova tipologia

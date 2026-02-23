@@ -5,12 +5,6 @@ const { validateId, validateName } = require("../middleware/validation");
 const { asyncHandler } = require("../middleware/errorHandler");
 const ateneoController = require("../controllers/ateneoController");
 
-// GET /:id - Legge un ateneo per ID
-router.get(
-  "/:id",
-  validateId(),
-  asyncHandler(ateneoController.getById)
-);
 
 // GET / - Legge tutti gli atenei con paginazione
 router.get(
@@ -18,6 +12,12 @@ router.get(
   asyncHandler(ateneoController.getAll)
 );
 
+// GET /:id - Legge un ateneo per ID
+router.get(
+  "/:id",
+  validateId(),
+  asyncHandler(ateneoController.getById)
+);
 // POST / - Crea un nuovo ateneo
 router.post(
   "/",
