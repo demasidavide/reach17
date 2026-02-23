@@ -56,7 +56,7 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
 
   try {
     await conn.beginTransaction();
-
+    logger.debug("Transazione iniziata", { nome, user: username });
     // Verifica se il corso esiste
     const corsoExists = await corsoAteneoRepo.corsoExists(idCorso);
     if (!corsoExists) {
@@ -109,6 +109,11 @@ const createCorsoAteneo = async (idCorso, idAteneo, username) => {
   } catch (error) {
     if (conn) {
       await conn.rollback();
+      logger.warn("Transazione rollback eseguito", {
+          nome,
+          user: username,
+          error: error.message
+        });
     }
     throw error;
   } finally {

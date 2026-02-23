@@ -37,7 +37,7 @@ const createCorso = async (nome, tipologiaId, username) => {
   
   try {
     await conn.beginTransaction();
-
+    logger.debug("Transazione iniziata", { nome, user: username });
     // Verifica se la tipologia esiste
     const tipologiaExists = await corsoRepo.tipologiaExists(tipologiaId);
     if (!tipologiaExists) {
@@ -68,6 +68,11 @@ const createCorso = async (nome, tipologiaId, username) => {
   } catch (error) {
     if (conn) {
       await conn.rollback();
+      logger.warn("Transazione rollback eseguito", { 
+          nome,
+          user: username,
+          error: error.message
+        });
     }
     throw error;
   } finally {
