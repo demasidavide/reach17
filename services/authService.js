@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const userRepo = require('../repositories/userRepository');
-const { AppError } = require('../middleware/errorHandler');
-const logger = require('../logger');
+const jwt = require("jsonwebtoken");
+const userRepo = require("../repositories/userRepository");
+const { AppError } = require("../middleware/errorHandler");
+const logger = require("../logger");
 
 /**
  * Effettua login e genera JWT token
@@ -9,43 +9,43 @@ const logger = require('../logger');
 const login = async (username, password) => {
   // Validazione input
   if (!username || !password) {
-    throw new AppError('Username e password obbligatori', 400);
+    throw new AppError("Username e password obbligatori", 400);
   }
 
   // Cerca utente
   const user = await userRepo.findByUsername(username);
-  
+
   if (!user) {
-    logger.warn('Tentativo di login con utente inesistente', { username });
-    throw new AppError('Credenziali non valide', 401);
+    logger.warn("Tentativo di login con utente inesistente", { username });
+    throw new AppError("Credenziali non valide", 401);
   }
 
   // Verifica password
   const isValidPassword = userRepo.verifyPassword(password, user.password);
-  
+
   if (!isValidPassword) {
-    logger.warn('Tentativo di login con password errata', { 
+    logger.warn("Tentativo di login con password errata", {
       username,
-      userId: user.id 
+      userId: user.id,
     });
-    throw new AppError('Credenziali non valide', 401);
+    throw new AppError("Credenziali non valide", 401);
   }
 
   // Genera token JWT
   const token = jwt.sign(
-    { 
-      userId: user.id, 
-      username: user.username, 
-      role: user.role 
+    {
+      userId: user.id,
+      username: user.username,
+      role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRY || '24h' }
+    { expiresIn: process.env.JWT_EXPIRY || "24h" },
   );
 
-  logger.info('Login effettuato con successo', { 
-    userId: user.id, 
+  logger.info("Login effettuato con successo", {
+    userId: user.id,
     username: user.username,
-    role: user.role
+    role: user.role,
   });
 
   return {
@@ -53,8 +53,8 @@ const login = async (username, password) => {
     user: {
       id: user.id,
       username: user.username,
-      role: user.role
-    }
+      role: user.role,
+    },
   };
 };
 
@@ -66,7 +66,7 @@ const verifyToken = (token) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     return { valid: true, payload: decoded };
   } catch (error) {
-    logger.warn('Token non valido o scaduto', { error: error.message });
+    logger.warn("Token non valido o scaduto", { error: error.message });
     return { valid: false, error: error.message };
   }
 };

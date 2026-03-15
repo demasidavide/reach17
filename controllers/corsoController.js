@@ -1,5 +1,8 @@
 const corsoService = require("../services/corsoService");
-const { getPaginationParams, getPaginationMeta } = require("../utility/pagination");
+const {
+  getPaginationParams,
+  getPaginationMeta,
+} = require("../utility/pagination");
 
 /**
  * GET /:id - Ottiene un singolo corso con tipologia
