@@ -1,10 +1,32 @@
 const winston = require('winston');
 const path = require('path');
-const fs = require('fs');
 
-const logsDir = path.join(__dirname, 'logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir);
+const isDev = process.env.NODE_ENV !== 'production';
+
+const transports = [
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.colorize(),
+      winston.format.simple()
+    )
+  })
+];
+
+if (isDev) {
+  const logsDir = path.join(__dirname, 'logs');
+  transports.push(
+    new winston.transports.File({
+      filename: path.join(logsDir, 'error.log'),
+      level: 'error',
+      options: { flags: 'a' },
+      dirname: logsDir,
+      createSymlink: false
+    }),
+    new winston.transports.File({
+      filename: path.join(logsDir, 'combined.log'),
+      dirname: logsDir
+    })
+  );
 }
 
 const logger = winston.createLogger({
@@ -15,21 +37,7 @@ const logger = winston.createLogger({
     winston.format.json()
   ),
   defaultMeta: { service: 'reach17-api' },
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logsDir, 'error.log'),
-      level: 'error'
-    }),
-    new winston.transports.File({
-      filename: path.join(logsDir, 'combined.log')
-    }),
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    })
-  ]
+  transports
 });
 
 module.exports = logger;
