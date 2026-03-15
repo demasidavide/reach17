@@ -25,8 +25,7 @@ const getAll = async (req, res) => {
  * POST / - Crea un nuovo corso
  */
 const create = async (req, res) => {
-  const { nome, id } = req.body;
-  const tipologiaId = id;
+  const { nome, id: tipologiaId } = req.body;
   const username = req.user?.username;
 
   const corso = await corsoService.createCorso(nome, tipologiaId, username);

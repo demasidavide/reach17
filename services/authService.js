@@ -71,31 +71,7 @@ const verifyToken = (token) => {
   }
 };
 
-/**
- * Ottiene informazioni utente da token
- */
-const getUserFromToken = async (token) => {
-  const { valid, payload } = verifyToken(token);
-  
-  if (!valid) {
-    throw new AppError('Token non valido', 401);
-  }
-
-  const user = await userRepo.findById(payload.userId);
-  
-  if (!user) {
-    throw new AppError('Utente non trovato', 404);
-  }
-
-  return {
-    id: user.id,
-    username: user.username,
-    role: user.role
-  };
-};
-
 module.exports = {
   login,
   verifyToken,
-  getUserFromToken,
 };
